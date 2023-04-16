@@ -2,7 +2,7 @@ require('./settings')
 //berikut adalah kode uptime robot untuk replit (buat yang paham aja)
 //require("http").createServer((_, res) => res.end("Uptime!")).listen(8080)
 
-const { default: WADefault, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, generateForwardMessageContent, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, makeInMemoryStore, jidDecode, proto } = require("@adiwajshing/baileys")
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, generateForwardMessageContent, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, makeInMemoryStore, jidDecode, proto } = require("@adiwajshing/baileys")
 const pino = require('pino')
 const { Boom } = require('@hapi/boom')
 const fs = require('fs')
@@ -25,8 +25,8 @@ const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream
 async function Botstarted() {
     const { state, saveCreds } = await useMultiFileAuthState(`./session`)
 
-    const alpha = WADefault({
-        logger: pino({ level: 'silent' }),
+    const alpha = makeWASocket({
+        logger: pino({ level: 'fatal' }),
         printQRInTerminal: true,
         browser: ['BOT CONFESS','Safari','1.0.0'],
         patchMessageBeforeSending: (message) => {
@@ -53,7 +53,15 @@ async function Botstarted() {
     },
         auth: state
     })
-
+getMessage: async (key) => {
+         if (store) {
+            const msg = await store.loadMessage(key.remoteJid, key.id)
+            return msg.message || undefined
+         }
+         return {
+            conversation: "on"
+         }
+      }
     store.bind(alpha.ev)
 
     alpha.ev.on('messages.upsert', async chatUpdate => {
